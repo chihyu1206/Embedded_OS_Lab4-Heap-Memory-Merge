@@ -97,27 +97,33 @@ static size_t xFreeBytesRemaining = configADJUSTED_HEAP_SIZE;
  */
 #define prvInsertBlockIntoFreeList( pxBlockToInsert )                                      \
 	/* pBlock: a pointer to iterate the linked-list of free blocks */                         \
-    BlockLink_t *pxIterator, *pBlock = &xStart;                                            \
+    BlockLink_t *pxIterator, *pxBlock = &xStart;                                            \
     size_t xBlockSize;                                      \
     /* the start / end address of free blocks in list  */                                    \
 	uint32_t start_addr, end_addr;                                      \
     xBlockSize = pxBlockToInsert->xBlockSize;                                      \
-	for (; pBlock->pxNextFreeBlock != &xEnd; pBlock = pBlock->pxNextFreeBlock) {                                      \
-        start_addr = (uint32_t) pBlock->pxNextFreeBlock;                                      \
-        end_addr = start_addr + (uint32_t)pBlock->pxNextFreeBlock->xBlockSize;                                       \
-        /*                                      \
-         * Merge the free blocks if the start / end address of                                      \
-         * insert block is overlapped with blocks in free list                                      \
-         */                                      \
-        if (end_addr == (uint32_t)pxBlockToInsert ||                                      \
-        	start_addr == (uint32_t)pxBlockToInsert + (uint32_t)xBlockSize) {                                      \
-        	pxBlockToInsert->xBlockSize += pBlock->pxNextFreeBlock->xBlockSize;                                      \
-        	pBlock->pxNextFreeBlock = pBlock->pxNextFreeBlock->pxNextFreeBlock;                                      \
-        }                                      \
+	for (; pxBlock->pxNextFreeBlock != &xEnd; pxBlock = pxBlock->pxNextFreeBlock) {                                      \
+        start_addr = (uint32_t) pxBlock->pxNextFreeBlock;                                      \
+        end_addr = start_addr + (uint32_t)pxBlock->pxNextFreeBlock->xBlockSize;                                       \
+        /* Merge the free blocks if the start/end address of */                                     \
+        /* inserted block is overlapped with blocks in free list */                                     \
+                                             
+		/* if start address is the same as the inserted end address */ \
+		/* merge both and sum up the block size  */ \ 
+        if (start_addr == (uint32_t)pxBlockToInsert + (uint32_t)xBlockSize) {                                      \
+        	pxBlockToInsert->xBlockSize += pxBlock->pxNextFreeBlock->xBlockSize;                                      \
+        	pxBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock->pxNextFreeBlock;                                      \
+        /* if end address is the same as the inserted start address*/ \
+		/* assign the start address to inserted block's pointer and sum up the block size */ \
+		} else if (end_addr == (uint32_t)pxBlockToInsert) { \
+            pxBlockToInsert = pxBlock->pxNextFreeBlock; \
+			pxBlockToInsert->xBlockSize += xBlockSize; \
+			pxBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock->pxNextFreeBlock; \
+		}                                      \
     }                                      \
 	/* Iterate through the list until a block is found that has a larger size */                                      \
 	/* than the block we are inserting. */                                      \
-	for( pxIterator = &xStart, xBlockSize = pxBlockToInsert->xBlockSize; \
+	for (pxIterator = &xStart, xBlockSize = pxBlockToInsert->xBlockSize; \
 	 pxIterator->pxNextFreeBlock->xBlockSize < xBlockSize; pxIterator = pxIterator->pxNextFreeBlock )  \
 	{                                      \
 		/* There is nothing to do here - just iterate to the correct position. */                                      \
