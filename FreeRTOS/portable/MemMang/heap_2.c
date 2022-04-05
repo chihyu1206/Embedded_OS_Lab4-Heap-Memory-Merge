@@ -107,15 +107,15 @@ static size_t xFreeBytesRemaining = configADJUSTED_HEAP_SIZE;
         end_addr = start_addr + (uint32_t)pxBlock->pxNextFreeBlock->xBlockSize;                                       \
         /* Merge the free blocks if the start/end address of */                                     \
         /* inserted block is overlapped with blocks in free list */                                     \
-                                             
-		/* if start address is the same as the inserted end address */ \
-		/* merge both and sum up the block size  */ \ 
-        if (start_addr == (uint32_t)pxBlockToInsert + (uint32_t)xBlockSize) {                                      \
+		/* if start address is the same as the inserted end address */                      \
+		/* merge both and sum up the block size  */                                         \ 
+        if (start_addr == (uint32_t)pxBlockToInsert + (uint32_t)xBlockSize) {                \
         	pxBlockToInsert->xBlockSize += pxBlock->pxNextFreeBlock->xBlockSize;                                      \
         	pxBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock->pxNextFreeBlock;                                      \
+        }                                                                                                         \
         /* if end address is the same as the inserted start address*/ \
 		/* assign the start address to inserted block's pointer and sum up the block size */ \
-		} else if (end_addr == (uint32_t)pxBlockToInsert) { \
+		else if (end_addr == (uint32_t)pxBlockToInsert) {\
             pxBlockToInsert = pxBlock->pxNextFreeBlock; \
 			pxBlockToInsert->xBlockSize += xBlockSize; \
 			pxBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock->pxNextFreeBlock; \
@@ -128,7 +128,7 @@ static size_t xFreeBytesRemaining = configADJUSTED_HEAP_SIZE;
 	{                                      \
 		/* There is nothing to do here - just iterate to the correct position. */                                      \
 	}                                      \
-\
+                                                                                                   \
 	/* Update the list to include the block being inserted in the correct */                                      \
 	/* position. */                                      \
 	pxBlockToInsert->pxNextFreeBlock = pxIterator->pxNextFreeBlock;                                      \
@@ -298,7 +298,7 @@ uint8_t *pucAlignedHeap;
 }
 
 void vPrintFreeList(void) {
-	char *TITLE = "StartAddress\t|heapSTRUCT_SIZE\t|xBlockSize\t|EndAddress\n\r";
+	char *TITLE = "StartAddress\t|heapSTRUCT_SIZE\t|xBlockSize\t|EndAddress\r\n";
 	char buf[64], start_addr[16], end_addr[16];
 	memset(buf, '\0', sizeof(buf));
 	memset(start_addr, '\0', sizeof(start_addr));
@@ -312,7 +312,7 @@ void vPrintFreeList(void) {
 		memset(end_addr, '\0', sizeof(end_addr));
 		Uint32ConvertHex((uint32_t)pBlock, start_addr);
 		Uint32ConvertHex((uint32_t)pBlock + (uint32_t)(pBlock->xBlockSize), end_addr);
-		sprintf(buf, "%s\t%d\t%d\t%s\n\r", start_addr, heapSTRUCT_SIZE,
+		sprintf(buf, "%s\t%d\t%d\t%s\r\n", start_addr, heapSTRUCT_SIZE,
 				                           pBlock->xBlockSize, end_addr);
 		HAL_UART_Transmit(&huart2, (uint8_t *)buf, strlen(buf), 0xffff);
 		pBlock = pBlock->pxNextFreeBlock;
