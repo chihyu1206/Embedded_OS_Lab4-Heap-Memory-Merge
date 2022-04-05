@@ -95,44 +95,47 @@ static size_t xFreeBytesRemaining = configADJUSTED_HEAP_SIZE;
  * the block.  Small blocks at the start of the list and large blocks at the end
  * of the list.
  */
-#define prvInsertBlockIntoFreeList( pxBlockToInsert )                                      \
-	/* pBlock: a pointer to iterate the linked-list of free blocks */                         \
-    BlockLink_t *pxIterator, *pxBlock = &xStart;                                            \
-    size_t xBlockSize;                                      \
-    /* the start / end address of free blocks in list  */                                    \
-	uint32_t start_addr, end_addr;                                      \
-    xBlockSize = pxBlockToInsert->xBlockSize;                                      \
-	for (; pxBlock->pxNextFreeBlock != &xEnd; pxBlock = pxBlock->pxNextFreeBlock) {                                      \
-        start_addr = (uint32_t) pxBlock->pxNextFreeBlock;                                      \
-        end_addr = start_addr + (uint32_t)pxBlock->pxNextFreeBlock->xBlockSize;                                       \
-        /* Merge the free blocks if the start/end address of */                                     \
-        /* inserted block is overlapped with blocks in free list */                                     \
-		/* if start address is the same as the inserted end address */                      \
-		/* merge both and sum up the block size  */                                         \ 
-        if (start_addr == (uint32_t)pxBlockToInsert + (uint32_t)xBlockSize) {                \
-        	pxBlockToInsert->xBlockSize += pxBlock->pxNextFreeBlock->xBlockSize;                                      \
-        	pxBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock->pxNextFreeBlock;                                      \
-        }                                                                                                         \
-        /* if end address is the same as the inserted start address*/ \
-		/* assign the start address to inserted block's pointer and sum up the block size */ \
-		else if (end_addr == (uint32_t)pxBlockToInsert) {\
-            pxBlockToInsert = pxBlock->pxNextFreeBlock; \
-			pxBlockToInsert->xBlockSize += xBlockSize; \
-			pxBlock->pxNextFreeBlock = pxBlock->pxNextFreeBlock->pxNextFreeBlock; \
-		}                                      \
-    }                                      \
-	/* Iterate through the list until a block is found that has a larger size */                                      \
-	/* than the block we are inserting. */                                      \
-	for (pxIterator = &xStart, xBlockSize = pxBlockToInsert->xBlockSize; \
-	 pxIterator->pxNextFreeBlock->xBlockSize < xBlockSize; pxIterator = pxIterator->pxNextFreeBlock )  \
-	{                                      \
-		/* There is nothing to do here - just iterate to the correct position. */                                      \
-	}                                      \
-                                                                                                   \
-	/* Update the list to include the block being inserted in the correct */                                      \
-	/* position. */                                      \
-	pxBlockToInsert->pxNextFreeBlock = pxIterator->pxNextFreeBlock;                                      \
-	pxIterator->pxNextFreeBlock = pxBlockToInsert;                                      \
+#define prvInsertBlockIntoFreeList( pxBlockToInsert )								\
+{																					\
+BlockLink_t *pxIterator;															\
+size_t xBlockSize;																	\
+uint8_t *ptr = NULL;																\
+	xBlockSize = pxBlockToInsert->xBlockSize;										\
+																					\
+	for (pxIterator = &xStart; pxIterator->pxNextFreeBlock != &xEnd; pxIterator = pxIterator->pxNextFreeBlock) \
+    {                                                                                \
+        ptr = (uint8_t *) pxIterator->pxIterator->pxNextFreeBlock;                    \
+        /* FreeBlock's end_addr == pxBlockToInsert */                                   \
+        if (ptr + pxIterator->pxNextFreeBlock->xBlockSize == (uint8_t *)pxBlockToInsert) \
+        {                                                                                 \
+            pxIterator->pxNextFreeBlock->xBlockSize += pxBlockToInsert->xBlockSize;        \
+            pxBlockToInsert = pxIterator->pxNextFreeBlock;                                 \
+            /* Remove merged free block from FreeList */                                   \
+            pxIterator->pxNextFreeBlock = pxIterator->pxNextFreeBlock->pxNextFreeBlock;    \
+            continue;                                                                       \
+        }                                                                                \
+        /* pxBlockToInsert's end_addr == FreeBlock's start_addr */                      \
+        ptr = (uint8_t *) pxBlockToInsert;                                               \
+        if (ptr + pxBlockToInsert->xBlockSize == (uint8_t *)pxIterator->pxNextFreeBlock)  \
+        {                                                                                  \
+            pxBlockToInsert->xBlockSize += pxIterator->pxNextFreeBlock->xBlockSize;        \
+            /* Remove merged free block from FreeList */                                    \
+            pxIterator->pxNextFreeBlock = pxIterator->pxNextFreeBlock->pxNextFreeBlock;      \
+        }                                                                                   \
+    }                                                                                         \
+                                                                                            \
+    /* Iterate through the list until a block is found that has a larger size */	\
+	/* than the block we are inserting. */											\
+	for( pxIterator = &xStart; pxIterator->pxNextFreeBlock->xBlockSize < xBlockSize; pxIterator = pxIterator->pxNextFreeBlock )	\
+	{																				\
+		/* There is nothing to do here - just iterate to the correct position. */	\
+	}																				\
+																					\
+	/* Update the list to include the block being inserted in the correct */		\
+	/* position. */																	\
+	pxBlockToInsert->pxNextFreeBlock = pxIterator->pxNextFreeBlock;					\
+	pxIterator->pxNextFreeBlock = pxBlockToInsert;									\
+}
 
 /*-----------------------------------------------------------*/
 
